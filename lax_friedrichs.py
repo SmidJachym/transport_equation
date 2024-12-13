@@ -62,54 +62,6 @@ def read_data(memmap_object, time_step):
     return memmap_object[:,:, time_step]
 
 
-def animate_3d(grid, num_t, dt, memmap_object):    # animate the results in a 3d graph
-    x = grid[0]
-    y = grid[1]
-    z = read_data(memmap_object, 0)
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    
-    surface = ax.plot_surface(x, y, z, cmap='Reds') # Reds
-    n = int(np.round(num_t/300, 0))
-
-    # Set labels
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('U')
-    ax.set_title('t = 0')
-    ax.set_zlim([0, 130])
-
-    # Update function for animation
-    def update(frame):
-        ax.cla()  # Clear the previous surface
-        ax.set_title(f't = {np.ceil(n*(frame+1)*dt*100)/100}')
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.set_zlabel('U')
-        ax.set_zlim([0, 130])
-        
-        # Update z values for animation effect
-        if n*(frame+1) > num_t:
-            return
-        z = read_data(memmap_object, n*(frame+1))
-        
-        # Re-draw the surface
-        ax.plot_surface(x, y, z, cmap='Reds') # Reds
-
-        if np.ceil(n*(frame+1)*dt*100)/100 > 2:
-            return
-
-    # Create animation
-    ani = FuncAnimation(fig, update, frames=np.arange(0, 300), interval=33)
-
-    ani.save(r'graphs/animation3d.gif', dpi = 300, writer='ffmpeg')
-    plt.show()
-
-
-
-
-        
-
 # ------------------------------------------ MAIN --------------------------------------------
 
 def main():
@@ -118,7 +70,7 @@ def main():
     x_interval = [-1.5, 1.5]
     y_interval = [-1.5, 1.5]
     x_int_len = x_interval[1]-x_interval[0]
-    y_int_len = y_interval[1]-y_interval[0]
+    y_int_len = y_interval[1] - y_interval[0]
 
     # Define parametres
     p = 1.0
@@ -140,7 +92,7 @@ def main():
         dy= step_y)
 
     # memmap object for data storage
-    data_memmap = np.memmap(rf"data/data{int(x_int_len/step_x)}x{int(y_int_len/step_y)}.dat", dtype='float32', mode='w', shape=(int(x_int_len/step_x), int(y_int_len/step_y), num_t_steps+1))
+    data_memmap = np.memmap(rf"data/data{int(x_int_len/step_x)}x{int(y_int_len/step_y)}.dat", dtype='float32', mode='write', shape=(int(x_int_len/step_x), int(y_int_len/step_y), num_t_steps+1))
 
     # Impose initial values and store them
     U_prev = initial_conditions(my_grid)
@@ -180,10 +132,7 @@ def main():
             )
 
         # Impose boundary conditions
-        boundary_conditions(
-            grid=my_grid,
-            U=U_next
-            )
+        boundary_conditions(U=U_next)
 
         # Copy the "next" array into "previous"
         U_prev = U_next.copy()
