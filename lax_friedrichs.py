@@ -1,7 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
-from matplotlib import cm
 import time
 import sys
 import os
@@ -30,7 +27,10 @@ def initial_conditions(grid):    # calculate and impose initial conditions
     U = 100*np.cos(((X+1)**2+Y**2)/0.1)
     return U
 
-def boundary_conditions(U):    # impose the zero boundary conditions
+def boundary_conditions(grid, U):    # calculate and the boundary conditions
+    X = grid[0]
+    Y = grid[1]
+
     U[:,0] = 0.0
     U[:,-1] = 0.0
     U[0,:] = 0.0
@@ -58,10 +58,6 @@ def write_data(memmap_object,start, end, data):
     memmap_object[:,:,start:end] = data[:,:,:]
     memmap_object.flush()
 
-def read_data(memmap_object, time_step):
-    return memmap_object[:,:, time_step]
-
-
 # ------------------------------------------ MAIN --------------------------------------------
 
 def main():
@@ -70,13 +66,13 @@ def main():
     x_interval = [-1.5, 1.5]
     y_interval = [-1.5, 1.5]
     x_int_len = x_interval[1]-x_interval[0]
-    y_int_len = y_interval[1] - y_interval[0]
+    y_int_len = y_interval[1]-y_interval[0]
 
     # Define parametres
     p = 1.0
     step_x = 0.03
     step_y = step_x
-    step_t = min(step_x/2, step_y/(4*abs(p)*max(np.abs(x_interval))))
+    step_t = min(step_x/2, step_y/(4*abs(p)*max(*np.abs(x_interval))))
     T = 2.0
 
     if int(np.ceil(T/step_t)) < 300: # necessary for animation
@@ -92,7 +88,7 @@ def main():
         dy= step_y)
 
     # memmap object for data storage
-    data_memmap = np.memmap(rf"data/data{int(x_int_len/step_x)}x{int(y_int_len/step_y)}.dat", dtype='float32', mode='write', shape=(int(x_int_len/step_x), int(y_int_len/step_y), num_t_steps+1))
+    data_memmap = np.memmap(rf"data/data{int(x_int_len/step_x)}x{int(y_int_len/step_y)}.dat", dtype='float32', mode='w+', shape=(int(x_int_len/step_x), int(y_int_len/step_y), num_t_steps+1))
 
     # Impose initial values and store them
     U_prev = initial_conditions(my_grid)
@@ -112,7 +108,6 @@ def main():
     k = 0
     n = 1
     U_store = np.zeros((int(x_int_len/step_x), int(y_int_len/step_y), 100))
-    
     for i in range(num_t_steps+1):
         if i == 100*n:
             write_data(data_memmap, i-99, i+1, U_store)
@@ -132,7 +127,10 @@ def main():
             )
 
         # Impose boundary conditions
-        boundary_conditions(U=U_next)
+        boundary_conditions(
+            grid=my_grid,
+            U=U_next
+            )
 
         # Copy the "next" array into "previous"
         U_prev = U_next.copy()
@@ -152,6 +150,6 @@ def main():
     # report
     print(f"Elapsed time: {int(elapsed_time/3600)}:{int((elapsed_time-int(elapsed_time/3600)*3600)/60)}:{elapsed_time - int(elapsed_time/3600)*3600 - int(elapsed_time/60)*60}")
     print(f"Time per calculation: {elapsed_time/num_t_steps*1000} ms\n")
-    
+
 if __name__ == "__main__":
     main()
