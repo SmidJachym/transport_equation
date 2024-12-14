@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-plt.rcParams["animation.ffmpeg_path"] = "usr/bin/ffmpeg"
+#plt.rcParams["animation.ffmpeg_path"] = "usr/bin/ffmpeg"
 from matplotlib import cm
 import matplotlib.animation as animation
 from matplotlib.animation import FuncAnimation 
@@ -13,7 +13,7 @@ x_int_len = x_interval[1] - x_interval[0]
 y_int_len = y_interval[1] - y_interval[0]
 
 p = 1.0
-step_x = 0.03
+step_x = 0.01
 step_y = step_x
 step_t = min(step_x / 2, step_y / (4 * abs(p) * max(np.abs(x_interval))))
 T = 2.0
@@ -42,13 +42,14 @@ def value_loss(memmap_object, num_t_steps):
     y = np.zeros(len(x))
     for i in range(num_t_steps):
         y[i] = np.sum(read_data(memmap_object, i))
-
+    plt.clf()
+    plt.figure()
     plt.plot(x, y, color="crimson", lw=2.25)
     plt.title("Loss of U over time")
     plt.xlabel("t")
     plt.ylabel(r"$\sum U$")
     plt.grid()
-    plt.savefig(rf"graphs/u_loss_{step_x}x{step_y}")
+    plt.savefig(rf"graphs/u_loss_{step_x}x{step_y}.svg")
 
 
 def visualize_2d(grid, memmap_object, step, name):
@@ -62,6 +63,7 @@ def visualize_2d(grid, memmap_object, step, name):
     u = 1.0
     v = -2.0 * x
     
+    plt.clf()
     plt.figure()
     plt.contourf(X, Y, Z, cmap="Reds")
     plt.colorbar()
@@ -71,14 +73,15 @@ def visualize_2d(grid, memmap_object, step, name):
     plt.xlabel("X")
     plt.ylabel("Y")
 
-    plt.savefig(rf"graphs/{name}.pdf")
+    plt.savefig(rf"graphs/{name}.svg")
 
 
 def visualize_3d(grid, step, name, memmap_object):
     X = grid[0]
     Y = grid[1]
     Z = read_data(memmap_object, step)
-
+    
+    plt.clf()
     fig = plt.figure(figsize=(10, 7))
     ax = fig.add_subplot(111, projection="3d")
 
@@ -88,7 +91,7 @@ def visualize_3d(grid, step, name, memmap_object):
     ax.set_zlabel("Z")
     ax.set_title(name)
 
-    plt.savefig(rf"graphs/{name}.pdf")
+    plt.savefig(rf"graphs/{name}.svg")
 
 
 def animate_3d(grid, num_t, dt, memmap_object):
@@ -96,6 +99,7 @@ def animate_3d(grid, num_t, dt, memmap_object):
     y = grid[1]
     z = read_data(memmap_object, 0)
 
+    plt.clf()
     fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
 
     n = int(np.round(num_t / 300, 0))
@@ -124,12 +128,14 @@ def animate_3d(grid, num_t, dt, memmap_object):
 
     ani = FuncAnimation(fig, update, frames=np.arange(0, 300), interval=33)
     FFwriter = animation.FFMpegWriter()
-    ani.save(r"graphs/animation.gif", dpi=300, writer=FFwriter)
+    ani.save(r"graphs/animation.mp4", dpi=300, writer=FFwriter)
 
 
 def visualize_section(grid, section, memmap_object, t, dx, dy, dt, axis):
 
     Y = read_data(memmap_object, t)
+
+    plt.clf()
     plt.figure()
 
     if axis == "x":
@@ -140,7 +146,7 @@ def visualize_section(grid, section, memmap_object, t, dx, dy, dt, axis):
         plt.ylabel(f"u(x,y = {np.round(section*dy + grid[1][0,0],1)}, t = {t*dt})")
         plt.grid()
         plt.savefig(
-            rf"graphs/u(x,y={np.round(section*dy + grid[1][0,0],1)},t={t*dt}).pdf"
+            rf"graphs/u(x,y={np.round(section*dy + grid[1][0,0],1)},t={t*dt}).svg"
         )
 
     elif axis == "y":
@@ -151,7 +157,7 @@ def visualize_section(grid, section, memmap_object, t, dx, dy, dt, axis):
         plt.ylabel(f"u(x = {np.round(section*dx + grid[0][0,0],1)}, y, t = {t*dt})")
         plt.grid()
         plt.savefig(
-            rf"graphs/u(x,y={np.round(section*dy + grid[0][0,0],1)},t={t*dt}).pdf"
+            rf"graphs/u(x,y={np.round(section*dy + grid[0][0,0],1)},t={t*dt}).svg"
         )
 
 
